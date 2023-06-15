@@ -1,8 +1,9 @@
 package ServerPkg;
 
+import java.io.Serializable;
 import java.net.Socket;
 
-public class ClientInfo {
+public class ClientInfo implements Serializable {
     String username;
     Socket socket;
     Boolean active;
@@ -10,14 +11,11 @@ public class ClientInfo {
     public ClientInfo(String username,Socket socket){
         this.socket = socket;
         this.username = username;
-        active = true;
+        active = !socket.isClosed();
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
-
-    public Boolean getActive() {
+    public boolean activeStatus(){
+        active = !socket.isClosed();
         return active;
     }
 
