@@ -41,7 +41,7 @@ public class Client {
             /*        Here options are displayed-what a client can do         */
             System.out.println("------------------------------");
             System.out.println("Here are the things you can do/explore...");
-            System.out.println("1.List of clients connected in the server(Type 1)");
+            System.out.println("1.List of clients connected(at least once) to the server(Type 1)");
             System.out.println("2.List of your uploaded files(Type 2)");
             System.out.println("3.Public files of other clients(Type 3)");
             System.out.println("4.Make a file request(Type 4)");
@@ -61,6 +61,20 @@ public class Client {
             }
 
             if(options == 1){
+                /*     List of clients connected to the server     */
+                out.writeObject("OPTION_1");
+                serverStatus = (Boolean) in.readObject();       //Receive the server status
+                if(serverStatus){
+                    serverMsg = (String) in.readObject();       //Read Server Messages
+                    while (!serverMsg.equalsIgnoreCase("THE_END")){
+                        System.out.println(serverMsg);
+                        serverMsg = (String) in.readObject();
+                    }
+                }
+                else{
+                    System.out.println("Something went wrong!Please try again...");
+                }
+
 
             }
             else if(options == 2){

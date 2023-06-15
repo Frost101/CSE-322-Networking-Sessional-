@@ -26,6 +26,9 @@ public class ServerThread extends Thread{
                 Server.clients.put(username,clientInfo);
                 out.writeObject(true);                                              //Send connection status.True:success..False:Failure
                 out.writeObject("Welcome new user ," + username + "....");          //Send Welcome Message
+
+                /*      First Login.So create a directory       */
+
             }
             else{
                 clientInfo = Server.clients.get(username);
@@ -40,16 +43,32 @@ public class ServerThread extends Thread{
                     out.writeObject(true);                                                   //Send connection status.True:success..False:Failure
                     out.writeObject("Welcome back ," + username + "....");                   //Send Welcome Message
                     clientInfo.setSocket(socket);                                            //Setup new socket
-                    clientInfo.activeStatus();                                              //Important* = client is now up and running
+                    clientInfo.activeStatus();                                               //Important* = client is now up and running
                 }
             }
 
+            String msg = "";
             while (true){
                 /*     Catch OPTION_1,OPTION_2....... from client     */
                 String options = (String)in.readObject();
                 if(options.equalsIgnoreCase("OPTION_1")){
-
+                    /*    Client wants a List of connected clients       */
+                    out.writeObject(true);                                              //First send status,True:Logout Success....False:Failure..
+                    out.writeObject("Here is the list of clients.....");
+                    int count = 1;
+                    for(String name : Server.clients.keySet()){
+                        msg = count + ". " + name + " ";
+                        if(Server.clients.get(name).activeStatus()){
+                            msg += "(Online now*)";
+                        }
+                        else{
+                            msg += "(Offline)";
+                        }
+                        out.writeObject(msg);
+                    }
+                    out.writeObject("THE_END");                                         //Terminate
                 }
+
                 else if(options.equalsIgnoreCase("OPTION_7")){
                     /*    Client wants to Logout     */
                     out.writeObject(true);                                              //First send status,True:Logout Successful....False:Logout Failure
