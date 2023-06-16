@@ -1,8 +1,6 @@
 package ClientPkg;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -47,7 +45,7 @@ public class Client {
             System.out.println("4.Make a file request(Type 4)");
             System.out.println("5.Read Unread Messages(Type 5)");
             System.out.println("6.Upload a file(Type 6)");
-            System.out.println("7.Logout(Type 7");
+            System.out.println("7.Logout(Type 7)");
             System.out.println("-------------------------------");
 
             String serverMsg;           //To store the messages sent from server
@@ -90,7 +88,54 @@ public class Client {
 
             }
             else if(options == 6){
+                /*       Upload a file        */
+                out.writeObject("OPTION_6");
+                serverMsg = (String) in.readObject();       //Server asks to send a file name
+                System.out.println(serverMsg);
+                String fileName = sc.nextLine();
 
+                String filePath = "src/ClientDirectories/" + fileName;
+                File file = new File(filePath);
+
+                while(true){
+                    if(file.exists()){
+                        break;
+                    }
+                    else{
+                        System.out.println("File not found.Enter a valid file name...");
+                        fileName = sc.nextLine();
+                        filePath = "src/ClientDirectories/" + fileName;
+                        file = new File(filePath);
+                    }
+                }
+
+                out.writeObject(fileName);                 //Send File Name to the server
+                serverMsg = (String) in.readObject();      //Server asks for the file size
+                long fileSize = file.length();
+                System.out.println("File size "+fileSize+" bytes.Sending this information to the server");
+                out.writeObject(fileSize);                 //Send File size to the server
+                int chunkSize = (int)in.readObject();      //Receives chunksize from server
+                System.out.println("Chunk Size = " + chunkSize + "  is received from server");
+                FileInputStream fileInputStream = new FileInputStream(new File(filePath));
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                byte[] chunk = new byte[chunkSize];
+                int bytesRead;
+                int chunkNumber = 1;
+                while ((bytesRead=bufferedInputStream.read(chunk)) != -1){
+                    System.out.println(bytesRead + " bytes read");
+                    out.write(chunk, 0, bytesRead);
+                    out.flush();
+                    while (true){
+                        String confMsg = (String) in.readObject();
+                        if(confMsg.equalsIgnoreCase("CHUNKS_RECEIVED")){
+                            break;
+                        }
+                    }
+                    System.out.println("Chunk No " + chunkNumber + " is sent..");
+                    chunkNumber++;
+                }
+                out.writeObject("THE_END");
+                System.out.println("File sent successfully...");
             }
             else if(options == 7){
                 /*   Log out  */

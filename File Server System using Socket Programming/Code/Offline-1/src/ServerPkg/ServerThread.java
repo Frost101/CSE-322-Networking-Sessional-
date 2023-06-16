@@ -1,9 +1,9 @@
 package ServerPkg;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.awt.*;
+import java.io.*;
 import java.net.Socket;
+import java.util.Random;
 
 public class ServerThread extends Thread{
     Socket socket;
@@ -25,10 +25,18 @@ public class ServerThread extends Thread{
                 clientInfo.activeStatus();
                 Server.clients.put(username,clientInfo);
                 out.writeObject(true);                                              //Send connection status.True:success..False:Failure
-                out.writeObject("Welcome new user ," + username + "....");          //Send Welcome Message
 
                 /*      First Login.So create a directory       */
-
+                String filePath = "src/ServerDirectories/" + username;
+                File directory = new File(filePath);
+                boolean success1 = directory.mkdir();
+                if (success1) {
+                    System.out.println("Directory created at " + filePath);
+                    out.writeObject("Welcome new user ," + username + "...." + "\n A new directory is created under your username in the server");          //Send Welcome Message
+                } else {
+                    System.out.println("Failed to create directory at " + filePath);
+                    out.writeObject("Welcome new user ," + username + "...." + "\n A new directory is created under your username in the server");          //Send Welcome Message
+                }
             }
             else{
                 clientInfo = Server.clients.get(username);
@@ -67,6 +75,54 @@ public class ServerThread extends Thread{
                         out.writeObject(msg);
                     }
                     out.writeObject("THE_END");                                         //Terminate
+                }
+
+                else if(options.equalsIgnoreCase("OPTION_6")){
+                    /*      Client wants to upload a file       */
+                    out.writeObject("Send The File Name");          //Request client to send a file name
+                    String fileName = (String) in.readObject();     //Receives file name from client
+                    out.writeObject("Send The File Size");          //Request Client to send the file size in bytes
+                    long fileSize = (long) in.readObject();         //Receives file size from client
+                    Random random = new Random();
+                    int chunkSize = random.nextInt( Server.MAX_CHUNK_SIZE - Server.MIN_CHUNK_SIZE + 1) + Server.MIN_CHUNK_SIZE;
+                    out.writeObject(chunkSize);                     //Send chunkSize to client
+                    int chunkNumber = 1;
+                    byte[] buffer = new byte[chunkSize];
+                    int bytesRead;
+
+                    System.out.println("Uploading starts");
+                    String fName = "chunk_" + chunkNumber + ".dat";
+                    String filePath = "src/ServerDirectories/" + username + "/" + fileName;
+                    FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+                    BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath));
+
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        bufferedOutputStream.write(buffer, 0, bytesRead);
+                        bufferedOutputStream.flush();
+                        System.out.println("chunk "+chunkNumber+" received " + bytesRead + " bytes received");
+                        chunkNumber++;
+                        out.writeObject("CHUNKS_RECEIVED");
+                    }
+                    String mssg = (String) in.readObject();
+                    System.out.println(mssg);
+                    System.out.println("File uploaded successfully!!!!");
+
+//                    /*       Merge The Chunks       */
+//                    String outputFile = "src/ServerDirectories/" + username + "/" + fileName;
+//                    String inputDirectory = "src/ServerDirectories/" + username;
+//                    FileOutputStream fos = new FileOutputStream(outputFile);
+//                    File directory = new File(inputDirectory);
+//                    File[] chunkFiles = directory.listFiles((dir, name) -> name.endsWith(".dat"));
+//
+//
+//                    for (File chunkFile : chunkFiles) {
+//                        FileInputStream fis = new FileInputStream(chunkFile);
+//                        buffer = new byte[chunkSize];
+//                        while ((bytesRead = fis.read(buffer)) != -1) {
+//                            fos.write(buffer, 0, bytesRead);
+//                        }
+//                    }
+//                    System.out.println("Merged Successfully!!!");
                 }
 
                 else if(options.equalsIgnoreCase("OPTION_7")){
