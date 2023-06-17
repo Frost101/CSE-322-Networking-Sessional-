@@ -4,6 +4,7 @@ package ServerPkg;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Server {
@@ -14,6 +15,11 @@ public class Server {
     public static final int MIN_CHUNK_SIZE = 100;
     public static final int MAX_CHUNK_SIZE = 200;
     public static final int MAX_BUFFER_SIZE = 1000000;
+    public static volatile int fileID = 1;
+
+    public static volatile ArrayList<FileInfo> fileList = new ArrayList<>();    //To store uploaded file info
+
+    public static volatile HashMap<Integer,FileInfo> fileInfoHashMap = new HashMap<Integer, FileInfo>();
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(9999);
         while(true){

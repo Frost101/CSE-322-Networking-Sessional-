@@ -77,52 +77,126 @@ public class ServerThread extends Thread{
                     out.writeObject("THE_END");                                         //Terminate
                 }
 
+                else if(options.equalsIgnoreCase("OPTION_2")){
+                    /*          List of that client's uploaded files        */
+
+                    //Send messages to client
+                    out.writeObject("Server:Here is the list of your uploaded files");
+                    out.writeObject("File ID --- File Name --- File Type ");
+                    FileInfo temp;
+                    String tmpMsg = "";
+                    for(int key : Server.fileInfoHashMap.keySet()){
+                        temp = Server.fileInfoHashMap.get(key);
+                        tmpMsg = "";
+                        if(temp.getUserName().equalsIgnoreCase(username)) {
+                            tmpMsg += (temp.getFileID() + " --- ");
+                            tmpMsg += (temp.getFileName() + " --- ");
+                            if (temp.getFileType()) tmpMsg += "Public";
+                            else tmpMsg += "Private";
+                            out.writeObject(tmpMsg);            //Send file info to client
+                        }
+                    }
+                    out.writeObject("THE_END");             //Send client a signal that the file info sending is complete
+                    out.writeObject("Server:Do you want to download?");     //Asks for confirmation if client wants to download any file or not
+                    Boolean status = (Boolean) in.readObject();             //True:client wants to download... False:Client doesn't
+                    if(!status){
+                        /*        Client doesn't want to download..so continue...          */
+                        continue;
+                    }
+                    ServerHelper.sendFile(in,out,username);
+                }
+
+
+                else if(options.equalsIgnoreCase("OPTION_3")){
+                    /*       Public files of other clients       */
+
+                    //Send messages to client
+                    out.writeObject("Server:Here is the list of your uploaded files");
+                    out.writeObject("File ID --- File Name --- Uploaded by ");
+                    FileInfo temp;
+                    String tmpMsg = "";
+                    for(int key : Server.fileInfoHashMap.keySet()){
+                        temp = Server.fileInfoHashMap.get(key);
+                        tmpMsg = "";
+                        if(!(temp.getUserName().equalsIgnoreCase(username)) && temp.getFileType()) {
+                            tmpMsg += (temp.getFileID() + " --- ");
+                            tmpMsg += (temp.getFileName() + " --- ");
+                            tmpMsg += (temp.getUserName());
+                            out.writeObject(tmpMsg);            //Send file info to client
+                        }
+                    }
+                    out.writeObject("THE_END");             //Send client a signal that the file info sending is complete
+
+                }
+
                 else if(options.equalsIgnoreCase("OPTION_6")){
                     /*      Client wants to upload a file       */
-                    out.writeObject("Send The File Name");          //Request client to send a file name
-                    String fileName = (String) in.readObject();     //Receives file name from client
-                    out.writeObject("Send The File Size");          //Request Client to send the file size in bytes
-                    long fileSize = (long) in.readObject();         //Receives file size from client
+                    out.writeObject("Server:Send The File Name");                      //Request client to send a file name
+                    String fileName = (String) in.readObject();                        //Receives file name from client
+                    out.writeObject("Server:Send The File Type(Public or Private");    //Request client to send file type
+                    Boolean fileType = (Boolean)in.readObject();                       //Receives fileType from client,True=Public,False=Private
+                    out.writeObject("Server:Send The File Size");                      //Request Client to send the file size in bytes
+                    long fileSize = (long) in.readObject();                            //Receives file size from client
+
+                    /*      Now check if file size overflows the MAX_BUFFER_SIZE or not         */
+                    if(Server.usedBufferSize + fileSize > Server.MAX_BUFFER_SIZE){
+                        out.writeObject(false);                                                             //Send status to the client.Upload failure
+                        out.writeObject("Server:ERROR:Buffer Size Overflow...TRANSMISSION TERMINATED!");   //Send Termination message
+                        System.out.println("ERROR:Buffer Size Overflow...TRANSMISSION TERMINATED!");
+                        continue;
+                    }
+                    else{
+                        out.writeObject(true);                                                      //Success true
+                        out.writeObject("Server: You may now begin the transmission");              //Permission for uploading granted
+                    }
+
+
                     Random random = new Random();
                     int chunkSize = random.nextInt( Server.MAX_CHUNK_SIZE - Server.MIN_CHUNK_SIZE + 1) + Server.MIN_CHUNK_SIZE;
                     out.writeObject(chunkSize);                     //Send chunkSize to client
-                    int chunkNumber = 1;
+                    int chunkNumber = 1;                            //To track which no of chunk is received
                     byte[] buffer = new byte[chunkSize];
                     int bytesRead;
 
-                    System.out.println("Uploading starts");
-                    String fName = "chunk_" + chunkNumber + ".dat";
-                    String filePath = "src/ServerDirectories/" + username + "/" + fileName;
+                    System.out.println(username + " started uploading ...");
+                    String filePath = "src/ServerDirectories/" + username + "/" + fileName;                  //Received file path full
                     FileOutputStream fileOutputStream = new FileOutputStream(filePath);
                     BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath));
+                    int totalBytesRead = 0;
 
                     while ((bytesRead = in.read(buffer)) != -1) {
+                        totalBytesRead += bytesRead;
                         bufferedOutputStream.write(buffer, 0, bytesRead);
                         bufferedOutputStream.flush();
-                        System.out.println("chunk "+chunkNumber+" received " + bytesRead + " bytes received");
+                        System.out.println("chunk "+chunkNumber+" received (" + bytesRead + " bytes)");
                         chunkNumber++;
-                        out.writeObject("CHUNKS_RECEIVED");
+                        out.writeObject("CHUNKS_RECEIVED");                                                 //Send confirmation to client so that he can send the next chunk
                     }
-                    String mssg = (String) in.readObject();
-                    System.out.println(mssg);
-                    System.out.println("File uploaded successfully!!!!");
+                    String mssg = (String) in.readObject();                                                 //Completion message from client
+                    if(mssg.equalsIgnoreCase("THE_END")){
+                        if(totalBytesRead == fileSize){
+                            out.writeObject(true);                                    //Send file uploading status
+                            out.writeObject("File uploaded sucessfully!!!");          //Send success msg to the client
+                            System.out.println("File Uploaded Successfully!");
+                            Server.usedBufferSize += totalBytesRead;                  //Update the used Buffer Size
 
-//                    /*       Merge The Chunks       */
-//                    String outputFile = "src/ServerDirectories/" + username + "/" + fileName;
-//                    String inputDirectory = "src/ServerDirectories/" + username;
-//                    FileOutputStream fos = new FileOutputStream(outputFile);
-//                    File directory = new File(inputDirectory);
-//                    File[] chunkFiles = directory.listFiles((dir, name) -> name.endsWith(".dat"));
-//
-//
-//                    for (File chunkFile : chunkFiles) {
-//                        FileInputStream fis = new FileInputStream(chunkFile);
-//                        buffer = new byte[chunkSize];
-//                        while ((bytesRead = fis.read(buffer)) != -1) {
-//                            fos.write(buffer, 0, bytesRead);
-//                        }
-//                    }
-//                    System.out.println("Merged Successfully!!!");
+                            /*        To add information to the server's file list          */
+                            FileInfo fileInfo = new FileInfo();
+                            fileInfo.setUserName(username);
+                            fileInfo.setFileName(fileName);
+                            fileInfo.setFilePath(filePath);
+                            fileInfo.setFileType(fileType);
+                            Server.fileInfoHashMap.put(fileInfo.getFileID(),fileInfo);      //Update the list
+                        }
+                        else{
+                            System.out.println("Upload operation failed!");
+                            out.writeObject(false);                                    //Send file uploading status
+                            out.writeObject("File upload FAILED.TRY AGAIN");          //Send success msg to the client
+                            File file = new File(filePath);
+                            file.delete();                                            //Delete the existing chunks
+                        }
+                    }
+
                 }
 
                 else if(options.equalsIgnoreCase("OPTION_7")){

@@ -76,10 +76,50 @@ public class Client {
 
             }
             else if(options == 2){
-
+                /*         List of my uploaded files        */
+                out.writeObject("OPTION_2");
+                serverMsg = (String) in.readObject();
+                while(!serverMsg.equalsIgnoreCase("THE_END")){
+                    System.out.println(serverMsg);
+                    serverMsg = (String) in.readObject();
+                }
+                serverMsg = (String) in.readObject();           //Server is asking if I want to downloa any file or not
+                Boolean status;
+                while (true){
+                    System.out.println(serverMsg);
+                    System.out.println("YES(Type 1)");
+                    System.out.println("NO(type 2)");
+                    String msg = sc.nextLine();
+                    if(msg.equalsIgnoreCase("1")){
+                        status = true;
+                        break;
+                    }
+                    else if(msg.equalsIgnoreCase("2")){
+                        status = false;
+                        break;
+                    }
+                    else{
+                        System.out.println("Invalid Option!try again");
+                    }
+                }
+                out.writeObject(status);                        //Status:True(download),false(no)
+                if(!status)continue;                            //If client doesn't want to download then continue
+                serverMsg = (String) in.readObject();           //Server sends the msg "Send the valid file ID"
+                System.out.println(serverMsg);
+                System.out.print("Enter:");
+                String FID = sc.nextLine();
+                out.writeObject(FID);                           //Send file ID to the server
+                ClientHelper.receiveFile(in,out,username);
             }
-            else if(options == 3){
 
+            else if(options == 3){
+                /*       Public files of  other clients       */
+                out.writeObject("OPTION_3");
+                serverMsg = (String) in.readObject();
+                while(!serverMsg.equalsIgnoreCase("THE_END")){
+                    System.out.println(serverMsg);
+                    serverMsg = (String) in.readObject();
+                }
             }
             else if(options == 4){
 
@@ -108,12 +148,48 @@ public class Client {
                         file = new File(filePath);
                     }
                 }
-
                 out.writeObject(fileName);                 //Send File Name to the server
+
+
+                serverMsg = (String) in.readObject();      //Server asks for file type
+                boolean fileType;                          //True:Public,False:Private
+                while (true){
+                    System.out.println(serverMsg);
+                    System.out.println("Public(Type 1)");
+                    System.out.println("Private(Type 2)");
+                    String tmp = sc.nextLine();
+                    if(tmp.equalsIgnoreCase("1")){
+                        fileType = true;
+                        break;
+                    }
+                    else if(tmp.equalsIgnoreCase("2")){
+                        fileType = false;
+                        break;
+                    }
+                    else{
+                        System.out.println("Invalid Input!Try again...");
+                    }
+                }
+                out.writeObject(fileType);                  //Send server the filetype,public or private
+
                 serverMsg = (String) in.readObject();      //Server asks for the file size
                 long fileSize = file.length();
                 System.out.println("File size "+fileSize+" bytes.Sending this information to the server");
                 out.writeObject(fileSize);                 //Send File size to the server
+
+                /*     Wait for server's confirmation about buffer size     */
+                Boolean stat = (Boolean) in.readObject();
+                serverMsg = (String) in.readObject();
+                if(stat){
+                    /*      Begin the Transmission      */
+                    System.out.println(serverMsg);
+                }
+                else{
+                    /*          Overflow        */
+                    System.out.println(serverMsg);
+                    continue;
+                }
+
                 int chunkSize = (int)in.readObject();      //Receives chunksize from server
                 System.out.println("Chunk Size = " + chunkSize + "  is received from server");
                 FileInputStream fileInputStream = new FileInputStream(new File(filePath));
@@ -135,7 +211,19 @@ public class Client {
                     chunkNumber++;
                 }
                 out.writeObject("THE_END");
-                System.out.println("File sent successfully...");
+
+                Boolean status = (Boolean) in.readObject();             //Receives Server status
+                serverMsg = (String) in.readObject();
+                if(status){
+                    /*    File upload is successfull      */
+                    System.out.println(serverMsg);
+                }
+                else{
+                    /*      Unsuccessful        */
+                    System.out.println(serverMsg);
+                }
+
+
             }
             else if(options == 7){
                 /*   Log out  */
