@@ -16,6 +16,11 @@ public class Server {
     public static final int MAX_CHUNK_SIZE = 200;
     public static final int MAX_BUFFER_SIZE = 1000000;
     public static volatile int fileID = 1;
+    public static volatile HashMap<Integer,Request> reqList = new HashMap<>();
+
+    public static volatile HashMap<String,UnreadMessages> unreadMessagesHashMap = new HashMap<>();
+
+    public static volatile int reqID = 1;
 
     public static volatile ArrayList<FileInfo> fileList = new ArrayList<>();    //To store uploaded file info
 

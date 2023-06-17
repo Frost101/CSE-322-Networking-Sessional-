@@ -45,7 +45,8 @@ public class Client {
             System.out.println("4.Make a file request(Type 4)");
             System.out.println("5.Read Unread Messages(Type 5)");
             System.out.println("6.Upload a file(Type 6)");
-            System.out.println("7.Logout(Type 7)");
+            System.out.println("7.Upload requested files(Type 7)");
+            System.out.println("8.Logout(Type 8)");
             System.out.println("-------------------------------");
 
             String serverMsg;           //To store the messages sent from server
@@ -120,12 +121,53 @@ public class Client {
                     System.out.println(serverMsg);
                     serverMsg = (String) in.readObject();
                 }
+                serverMsg = (String) in.readObject();           //Server is asking if I want to downloa any file or not
+                Boolean status;
+                while (true){
+                    System.out.println(serverMsg);
+                    System.out.println("YES(Type 1)");
+                    System.out.println("NO(type 2)");
+                    String msg = sc.nextLine();
+                    if(msg.equalsIgnoreCase("1")){
+                        status = true;
+                        break;
+                    }
+                    else if(msg.equalsIgnoreCase("2")){
+                        status = false;
+                        break;
+                    }
+                    else{
+                        System.out.println("Invalid Option!try again");
+                    }
+                }
+                out.writeObject(status);                        //Status:True(download),false(no)
+                if(!status)continue;                            //If client doesn't want to download then continue
+                serverMsg = (String) in.readObject();           //Server sends the msg "Send the valid file ID"
+                System.out.println(serverMsg);
+                System.out.print("Enter:");
+                String FID = sc.nextLine();
+                out.writeObject(FID);                           //Send file ID to the server
+                ClientHelper.receiveFile(in,out,username);
             }
             else if(options == 4){
-
+                    /*          Make a file Request         */
+                out.writeObject("OPTION_4");
+                serverMsg = (String) in.readObject();           //Server asks for a file description
+                System.out.println(serverMsg);
+                System.out.print("Description:");
+                String fileDescription = sc.nextLine();
+                out.writeObject(fileDescription);               //Send file description to the server
+                serverMsg = (String) in.readObject();            //Server sends confirmation
+                System.out.println(serverMsg);
             }
             else if(options == 5){
-
+                /*          See Unread Messages         */
+                out.writeObject("OPTION_5");
+                serverMsg = (String) in.readObject();
+                while (!serverMsg.equalsIgnoreCase("THE_END")){
+                    System.out.println(serverMsg);
+                    serverMsg = (String) in.readObject();
+                }
             }
             else if(options == 6){
                 /*       Upload a file        */
@@ -225,9 +267,15 @@ public class Client {
 
 
             }
+
             else if(options == 7){
+                /*      Upload Requested Files      */
+
+            }
+
+            else if(options == 8){
                 /*   Log out  */
-                out.writeObject("OPTION_7");
+                out.writeObject("OPTION_8");
 
                 serverStatus = (Boolean) in.readObject();       //Receive the server status
                 if(serverStatus){

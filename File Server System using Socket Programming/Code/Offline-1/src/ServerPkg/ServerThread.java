@@ -29,7 +29,8 @@ public class ServerThread extends Thread{
                 /*      First Login.So create a directory       */
                 String filePath = "src/ServerDirectories/" + username;
                 File directory = new File(filePath);
-                boolean success1 = directory.mkdir();
+                Server.unreadMessagesHashMap.put(username,new UnreadMessages(username));
+                boolean success1 = directory.mkdirs();
                 if (success1) {
                     System.out.println("Directory created at " + filePath);
                     out.writeObject("Welcome new user ," + username + "...." + "\n A new directory is created under your username in the server");          //Send Welcome Message
@@ -126,7 +127,43 @@ public class ServerThread extends Thread{
                         }
                     }
                     out.writeObject("THE_END");             //Send client a signal that the file info sending is complete
+                    out.writeObject("Server:Do you want to download?");     //Asks for confirmation if client wants to download any file or not
+                    Boolean status = (Boolean) in.readObject();             //True:client wants to download... False:Client doesn't
+                    if(!status){
+                        /*        Client doesn't want to download..so continue...          */
+                        continue;
+                    }
+                    ServerHelper.sendFile(in,out,username);
+                }
 
+                else if(options.equalsIgnoreCase("OPTION_4")){
+                    /*              Client makes a file request             */
+                    out.writeObject("Server:Send a short description of the file");         //Asks client to give a short description
+                    String fileDescription = (String) in.readObject();                      //Client sends short description
+                    Request request = new Request();
+                    request.setWhoRequested(username);
+                    request.setFileDescription(fileDescription);
+                    Server.reqList.put(request.getReqID(), request);                        //Add to the reqlist of the server
+                    /*              Broadcast this message                  */
+                    for(String key : Server.unreadMessagesHashMap.keySet()){
+                        if(!key.equalsIgnoreCase(username)){
+                            String temp = "Request ID:" + request.getReqID() + "   Description:" + fileDescription;
+                            Server.unreadMessagesHashMap.get(key).getUnreadMessages().add(temp);
+                        }
+                    }
+                    out.writeObject("Server:Your request is noted and broadcasted to the other users");     //Send confirmation to the client
+                }
+
+                else if(options.equalsIgnoreCase("OPTION_5")){
+                    /*          Read Unread Messages            */
+                    out.writeObject("Here are the unread messages.........");
+                    UnreadMessages temp = Server.unreadMessagesHashMap.get(username);
+                    for(String s : temp.getUnreadMessages()){
+                        out.writeObject(s);
+                        out.writeObject("-------------------------------------------");
+                    }
+                    temp.getUnreadMessages().clear();
+                    out.writeObject("THE_END");                     //Termination
                 }
 
                 else if(options.equalsIgnoreCase("OPTION_6")){
@@ -200,6 +237,11 @@ public class ServerThread extends Thread{
                 }
 
                 else if(options.equalsIgnoreCase("OPTION_7")){
+                    /*          Upload requested files              */
+
+                }
+
+                else if(options.equalsIgnoreCase("OPTION_8")){
                     /*    Client wants to Logout     */
                     out.writeObject(true);                                              //First send status,True:Logout Successful....False:Logout Failure
                     out.writeObject("Logout Successful!!!CONNECTION TERMINATED...");    //Send Message
