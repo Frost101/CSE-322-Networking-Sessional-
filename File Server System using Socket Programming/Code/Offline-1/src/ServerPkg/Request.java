@@ -5,9 +5,30 @@ public class Request {
     public int reqID;
     public String whoRequested;
 
+    public String whoUploaded;
+
+    public Boolean uploaded;
+
     public Request(){
         reqID = Server.reqID;
         Server.reqID++;
+        uploaded = false;
+    }
+
+    public void setUploaded(Boolean uploaded) {
+        this.uploaded = uploaded;
+    }
+
+    public Boolean getUploaded() {
+        return uploaded;
+    }
+
+    public void setWhoUploaded(String whoUploaded) {
+        this.whoUploaded = whoUploaded;
+    }
+
+    public String getWhoUploaded() {
+        return whoUploaded;
     }
 
     public void setFileDescription(String fileDescription) {

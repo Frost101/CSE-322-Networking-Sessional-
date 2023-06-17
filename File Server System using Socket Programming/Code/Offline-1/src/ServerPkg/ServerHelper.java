@@ -1,6 +1,7 @@
 package ServerPkg;
 
 import java.io.*;
+import java.util.Date;
 import java.util.Random;
 
 public class ServerHelper {
@@ -80,6 +81,13 @@ public class ServerHelper {
                 fileInfo.setFilePath(filePath);
                 fileInfo.setFileType(fileType);
                 Server.fileInfoHashMap.put(fileInfo.getFileID(),fileInfo);      //Update the list
+                if(reqID != -1){
+                    Request request = Server.reqList.get(reqID);
+                    request.setWhoUploaded(username);
+                    request.setUploaded(true);
+                    String msg = (username + " has uploaded your requested file bearing the requested id = " + request.getReqID() + "  File Name:"+ fileName+"...\nFile is now available at the public file section\nTime: " + new Date());
+                    Server.unreadMessagesHashMap.get(request.getWhoRequested()).getUnreadMessages().add(msg);
+                }
             }
             else{
                 System.out.println("Upload operation failed!");

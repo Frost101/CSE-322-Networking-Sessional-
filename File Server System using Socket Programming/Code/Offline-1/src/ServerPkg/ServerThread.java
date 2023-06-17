@@ -3,6 +3,7 @@ package ServerPkg;
 import java.awt.*;
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
 import java.util.Random;
 
 public class ServerThread extends Thread{
@@ -147,7 +148,7 @@ public class ServerThread extends Thread{
                     /*              Broadcast this message                  */
                     for(String key : Server.unreadMessagesHashMap.keySet()){
                         if(!key.equalsIgnoreCase(username)){
-                            String temp = "Request ID:" + request.getReqID() + "   Description:" + fileDescription;
+                            String temp = "Request ID:" + request.getReqID() + "   Description:" + fileDescription +"\nRequested By:"+username+"\nTime:" + new Date();
                             Server.unreadMessagesHashMap.get(key).getUnreadMessages().add(temp);
                         }
                     }
@@ -177,6 +178,12 @@ public class ServerThread extends Thread{
 
                 else if(options.equalsIgnoreCase("OPTION_7")){
                     /*          Upload requested files              */
+                    out.writeObject("Server:Send a valid request ID");
+                    int reqID = (Integer)in.readObject();               //Client sends reqID
+
+                    out.writeObject("Server:Send The File Name");                      //Request client to send a file name
+                    String fileName = (String) in.readObject();                        //Receives file name from client
+                    ServerHelper.receiveFile(in,out,fileName,username,true,reqID);
 
                 }
 

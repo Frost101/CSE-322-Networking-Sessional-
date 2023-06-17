@@ -7,7 +7,7 @@
     <list default="true" id="3392909c-cffe-43d4-89ce-8c7b6d356ac3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ClientPkg/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ClientPkg/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ClientPkg/ClientHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ClientPkg/ClientHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ServerPkg/Request.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ServerPkg/Request.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ServerPkg/ServerHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ServerPkg/ServerHelper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ServerPkg/ServerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ServerPkg/ServerThread.java" afterDir="false" />
     </list>

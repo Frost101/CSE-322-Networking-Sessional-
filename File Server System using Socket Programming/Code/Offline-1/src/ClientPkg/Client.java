@@ -218,7 +218,42 @@ public class Client {
 
             else if(options == 7){
                 /*      Upload Requested Files      */
+                out.writeObject("OPTION_7");
+                serverMsg = (String) in.readObject();               //Server asks for a valid request id
+                int reqID;
 
+                while (true){
+                    try {
+                        System.out.println(serverMsg);
+                        System.out.print("Request ID:");
+                        String tmp = sc.nextLine();
+                        reqID = Integer.parseInt(tmp);
+                        break;
+                    }catch (Exception e){
+                        System.out.println("Invalid input!Try Again...");
+                    }
+                }
+                out.writeObject(reqID);                              //Sends server the request ID
+                serverMsg = (String) in.readObject();       //Server asks to send a file name
+                System.out.println(serverMsg);
+                String fileName = sc.nextLine();
+
+                String filePath = "src/ClientDirectories/" + fileName;
+                File file = new File(filePath);
+
+                while(true){
+                    if(file.exists()){
+                        break;
+                    }
+                    else{
+                        System.out.println("File not found.Enter a valid file name...");
+                        fileName = sc.nextLine();
+                        filePath = "src/ClientDirectories/" + fileName;
+                        file = new File(filePath);
+                    }
+                }
+                out.writeObject(fileName);                 //Send File Name to the server
+                ClientHelper.sendFile(out,in,file,filePath);
             }
 
             else if(options == 8){
