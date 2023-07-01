@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="638a6028-4e5d-4654-b01d-12baf80078e2" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ClientPkg/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ClientPkg/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ClientPkg/ClientHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ClientPkg/ClientHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ServerPkg/Server.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ServerPkg/Server.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ServerPkg/ServerHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ServerPkg/ServerHelper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ServerPkg/ServerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ServerPkg/ServerThread.java" afterDir="false" />
-    </list>
+    <list default="true" id="638a6028-4e5d-4654-b01d-12baf80078e2" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
