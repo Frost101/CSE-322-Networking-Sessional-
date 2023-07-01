@@ -7,8 +7,20 @@ import java.util.Random;
 public class ServerHelper {
     public static void sendFile(ObjectInputStream in, ObjectOutputStream out,String username) throws IOException, ClassNotFoundException {
         out.writeObject("Server:Send us the valid File ID");    //Requests client to send valid file id
-        String FID = (String) in.readObject();                  //Client sends file id
-        int fileID = Integer.parseInt(FID);
+        int fileID = (Integer) in.readObject();                  //Client sends file id
+
+        /*      First Check if the file ID is valid or not      */
+        while(true){
+            if(Server.fileInfoHashMap.get(fileID)==null){
+                out.writeObject(false);
+                fileID = (Integer) in.readObject();                  //Client sends file id again
+            }
+            else{
+                out.writeObject(true);
+                break;
+            }
+        }
+
         FileInfo fileInfo = Server.fileInfoHashMap.get(fileID);
         out.writeObject(fileInfo.getFileName());                //Sends file name to the client
         FileInputStream fileInputStream = new FileInputStream(new File(fileInfo.getFilePath()));
@@ -40,6 +52,7 @@ public class ServerHelper {
             return;
         }
         else{
+            Server.usedBufferSize += fileSize;                                          //Allocate buffer
             out.writeObject(true);                                                      //Success true
             out.writeObject("Server: You may now begin the transmission");              //Permission for uploading granted
         }
@@ -54,6 +67,21 @@ public class ServerHelper {
 
         System.out.println(username + " started uploading ...");
         String filePath = "src/ServerDirectories/" + username + "/" + fileName;                  //Received file path full
+        File file = new File(filePath);
+        if(file.exists()){
+
+            /*          Delete previous entry of that file      */
+            int keyToDelete = -1;
+            for(Integer keys : Server.fileInfoHashMap.keySet()){
+                if(Server.fileInfoHashMap.get(keys).getFileName().equals(fileName) && Server.fileInfoHashMap.get(keys).getUserName().equals(username)){
+                    keyToDelete = keys;
+                }
+            }
+            if(keyToDelete != -1){
+                Server.fileInfoHashMap.remove(keyToDelete);
+            }
+            file.delete();
+        }
         FileOutputStream fileOutputStream = new FileOutputStream(filePath);
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath));
         int totalBytesRead = 0;
@@ -64,6 +92,14 @@ public class ServerHelper {
             bufferedOutputStream.flush();
             System.out.println("chunk "+chunkNumber+" received (" + bytesRead + " bytes)");
             chunkNumber++;
+
+            /*      Comment out the following lines to generate timeout error       */
+//            try{
+//                Thread.sleep(40000);
+//            }catch (Exception e){
+//                e.printStackTrace();
+//            }
+
             out.writeObject("CHUNKS_RECEIVED");                                                 //Send confirmation to client so that he can send the next chunk
         }
         String mssg = (String) in.readObject();                                                 //Completion message from client
@@ -72,7 +108,7 @@ public class ServerHelper {
                 out.writeObject(true);                                    //Send file uploading status
                 out.writeObject("File uploaded sucessfully!!!");          //Send success msg to the client
                 System.out.println("File Uploaded Successfully!");
-                Server.usedBufferSize += totalBytesRead;                  //Update the used Buffer Size
+                Server.usedBufferSize -= totalBytesRead;                  //Deallocate Buffer
 
                 /*        To add information to the server's file list          */
                 FileInfo fileInfo = new FileInfo();
@@ -93,9 +129,17 @@ public class ServerHelper {
                 System.out.println("Upload operation failed!");
                 out.writeObject(false);                                    //Send file uploading status
                 out.writeObject("File upload FAILED.TRY AGAIN");          //Send success msg to the client
-                File file = new File(filePath);
+                file = new File(filePath);
                 file.delete();                                            //Delete the existing chunks
             }
+        }
+        else{
+            /*       Timeout       */
+            System.out.println(mssg);
+            /*            Now,Delete the chunks that were received              */
+            file = new File(filePath);
+            file.delete();
+            System.out.println("Chunks are deleted for upload failure..Client:"+username);
         }
 
     }

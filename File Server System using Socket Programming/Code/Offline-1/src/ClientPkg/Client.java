@@ -14,6 +14,7 @@ public class Client {
 
 
         Socket socket = new Socket(host,port);
+        socket.setSoTimeout(30000);
         System.out.println("Connection Established");
         System.out.println("Remote Port: " + socket.getPort());
         System.out.println("Local Port: " + socket.getLocalPort());
@@ -106,10 +107,28 @@ public class Client {
                 out.writeObject(status);                        //Status:True(download),false(no)
                 if(!status)continue;                            //If client doesn't want to download then continue
                 serverMsg = (String) in.readObject();           //Server sends the msg "Send the valid file ID"
-                System.out.println(serverMsg);
-                System.out.print("Enter:");
-                String FID = sc.nextLine();
-                out.writeObject(FID);                           //Send file ID to the server
+                while(true){
+                    System.out.println(serverMsg);
+                    System.out.print("Enter:");
+                    String FID = sc.nextLine();
+                    Integer fid;
+                    try{
+                        fid = Integer.parseInt(FID);
+                        out.writeObject(fid);                           //Send file ID to the server
+                        status = (Boolean) in.readObject();             //Read status from the server if he file id is valid or not
+                        if(status){
+                            break;
+                        }
+                        else{
+                            System.out.println("Invalid file ID.Try Again!");
+                            continue;
+                        }
+                    }catch (NumberFormatException e){
+                        System.out.println("Invalid file ID.Try Again!");
+                        continue;
+                    }
+                }
+
                 ClientHelper.receiveFile(in,out,username);
             }
 
@@ -143,10 +162,27 @@ public class Client {
                 out.writeObject(status);                        //Status:True(download),false(no)
                 if(!status)continue;                            //If client doesn't want to download then continue
                 serverMsg = (String) in.readObject();           //Server sends the msg "Send the valid file ID"
-                System.out.println(serverMsg);
-                System.out.print("Enter:");
-                String FID = sc.nextLine();
-                out.writeObject(FID);                           //Send file ID to the server
+                while(true){
+                    System.out.println(serverMsg);
+                    System.out.print("Enter:");
+                    String FID = sc.nextLine();
+                    Integer fid;
+                    try{
+                        fid = Integer.parseInt(FID);
+                        out.writeObject(fid);                           //Send file ID to the server
+                        status = (Boolean) in.readObject();             //Read status from the server if he file id is valid or not
+                        if(status){
+                            break;
+                        }
+                        else{
+                            System.out.println("Invalid file ID.Try Again!");
+                            continue;
+                        }
+                    }catch (NumberFormatException e){
+                        System.out.println("Invalid file ID.Try Again!");
+                        continue;
+                    }
+                }
                 ClientHelper.receiveFile(in,out,username);
             }
             else if(options == 4){
@@ -222,19 +258,26 @@ public class Client {
                 serverMsg = (String) in.readObject();               //Server asks for a valid request id
                 int reqID;
 
-                while (true){
+                while (true) {
                     try {
                         System.out.println(serverMsg);
                         System.out.print("Request ID:");
                         String tmp = sc.nextLine();
                         reqID = Integer.parseInt(tmp);
-                        break;
-                    }catch (Exception e){
+                        out.writeObject(reqID);                    //Sends server the request ID
+                        Boolean status = (Boolean) in.readObject();//Server sends the status if the req ID is valid or not
+                        if(status){
+                            break;
+                        }
+                        else{
+                            System.out.println("Invalid input!Try Again...");
+                            continue;
+                        }
+                    } catch (Exception e) {
                         System.out.println("Invalid input!Try Again...");
                     }
                 }
-                out.writeObject(reqID);                              //Sends server the request ID
-                serverMsg = (String) in.readObject();       //Server asks to send a file name
+                serverMsg = (String) in.readObject();              //Server asks to send a file name
                 System.out.println(serverMsg);
                 String fileName = sc.nextLine();
 

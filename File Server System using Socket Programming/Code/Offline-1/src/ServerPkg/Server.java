@@ -14,7 +14,7 @@ public class Server {
     public static volatile int usedBufferSize = 0;
     public static final int MIN_CHUNK_SIZE = 100;
     public static final int MAX_CHUNK_SIZE = 200;
-    public static final int MAX_BUFFER_SIZE = 1000000;
+    public static final int MAX_BUFFER_SIZE = 80000;
     public static volatile int fileID = 1;
     public static volatile HashMap<Integer,Request> reqList = new HashMap<>();
 

@@ -1,6 +1,7 @@
 package ClientPkg;
 
 import java.io.*;
+import java.net.SocketTimeoutException;
 
 public class ClientHelper {
     public static void receiveFile(ObjectInputStream in, ObjectOutputStream out, String username) throws IOException, ClassNotFoundException {
@@ -33,6 +34,9 @@ public class ClientHelper {
 
 
     public static void sendFile(ObjectOutputStream out, ObjectInputStream in,File file,String filePath) throws IOException, ClassNotFoundException {
+
+
+        Boolean isUploadDone = true;               //To trace the timeout scenario
         String serverMsg;
         serverMsg = (String) in.readObject();      //Server asks for the file size
         long fileSize = file.length();
@@ -63,27 +67,44 @@ public class ClientHelper {
             System.out.println(bytesRead + " bytes read");
             out.write(chunk, 0, bytesRead);
             out.flush();
-            while (true){
-                String confMsg = (String) in.readObject();
-                if(confMsg.equalsIgnoreCase("CHUNKS_RECEIVED")){
-                    break;
-                }
-            }
-            System.out.println("Chunk No " + chunkNumber + " is sent..");
-            chunkNumber++;
-        }
-        out.writeObject("THE_END");
 
-        Boolean status = (Boolean) in.readObject();             //Receives Server status
-        serverMsg = (String) in.readObject();
-        if(status){
-            /*    File upload is successfull      */
-            System.out.println(serverMsg);
+            try{
+                while (true){
+                    String confMsg = (String) in.readObject();
+                    if(confMsg.equalsIgnoreCase("CHUNKS_RECEIVED")){
+                        break;
+                    }
+                }
+                System.out.println("Chunk No " + chunkNumber + " is sent..");
+                chunkNumber++;
+            }catch (SocketTimeoutException e){
+                System.out.println("TIMEOUT!Server did not acknowldge chunk within 30 seconds..UPLOAD FAILED");
+                isUploadDone = false;           //Upload is not successfull
+                break;
+            }
+
+        }
+
+        if(isUploadDone){
+            out.writeObject("THE_END");
+            Boolean status = (Boolean) in.readObject();             //Receives Server status
+            serverMsg = (String) in.readObject();
+            if(status){
+                /*    File upload is successfull      */
+                System.out.println(serverMsg);
+            }
+            else{
+                /*      Unsuccessful        */
+                System.out.println(serverMsg);
+            }
         }
         else{
-            /*      Unsuccessful        */
-            System.out.println(serverMsg);
+            /*        Upload is not successfull.Send Server the timeout message        */
+            serverMsg = (String) in.readObject();           //Dump chunk received msg
+            out.writeObject("TIMEOUT");
+
         }
+
 
     }
 }
