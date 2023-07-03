@@ -108,6 +108,7 @@ public class ServerHelper {
                 out.writeObject(true);                                    //Send file uploading status
                 out.writeObject("File uploaded sucessfully!!!");          //Send success msg to the client
                 System.out.println("File Uploaded Successfully!");
+                bufferedOutputStream.close();
                 Server.usedBufferSize -= totalBytesRead;                  //Deallocate Buffer
 
                 /*        To add information to the server's file list          */

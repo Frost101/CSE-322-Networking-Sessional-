@@ -27,9 +27,11 @@ public class ClientHelper {
             System.out.println("chunk "+chunkNumber+" received (" + bytesRead + " bytes)");
             chunkNumber++;
         }
+
         String mssg = (String) in.readObject();                 //Termination msg sent from server
         System.out.println(mssg);
         System.out.println("File downloaded successfully!!Total "+totalBytesRead+" bytes received");
+        bufferedOutputStream.close();
     }
 
 
