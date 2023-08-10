@@ -13,6 +13,7 @@
 
 #define PORT 9
 #define PACKET_SIZE 1024
+#define TX_RANGE 5
 
 // Network Topology
 
@@ -22,21 +23,58 @@
 // n4   n3  n2  n0 ---------------- n1   n5   n6   n7
 //   10.1.1.0        point-to-point     10.1.3.0
 
+using namespace ns3;
+using namespace std;
+
+//^ Global Var
+int packetSentCount = 0;
+int packetReceivedCount = 0;
+int bitsReceived = 0;
+
+
+
+//^ Trace Sink
+void packetReceived(Ptr< const Packet > packet, const Address &address){
+    bitsReceived += packet->GetSize();
+    packetReceivedCount++;
+    cout << "Packets received: " << packetReceivedCount << "   Bits Received: " << bitsReceived << endl;
+}
+
+void packetSent(Ptr< const Packet > packet){
+    packetSentCount++;
+    cout << "Packet Sent: " << packetSentCount << endl;
+}
 
 
 
 NS_LOG_COMPONENT_DEFINE("ns3-offline-1");
 
-using namespace ns3;
+
 
 int 
 main(int argc, char* argv[])
 {
-    int nodeCount = 6;
-    //int nodeSpeed = 5;              //* 5 m/s, 10 m/s etc
-    int flow = 3;
-    int packetsPerSec = 5;
-    //int coverageArea = 4;
+    int nodeCount = 2;
+    int nodeSpeed = 1;              //* 5 m/s, 10 m/s etc
+    int flow = 1;
+    int packetsPerSec = 1;
+    int coverageArea = 1;
+
+
+    //^ Command line argument parser setup. 
+    CommandLine cmd(__FILE__);
+    cmd.AddValue("nodeCount", "Number of nodes", nodeCount);
+    cmd.AddValue("flow", "Number of flows", flow);
+    cmd.AddValue("packetPerSec", "Number of packets per second", packetsPerSec);
+    cmd.AddValue("nodeSpeed", "Speed of nodes", nodeSpeed);
+    cmd.AddValue("coverageArea", "Coverage area", coverageArea);
+    cmd.Parse(argc, argv);
+
+    cout << "nodeCount: " << nodeCount << endl;
+    cout << "flow: " << flow << endl;
+    cout << "packetpersec: " << packetsPerSec << endl;
+    cout << "nodeSpeed: " << nodeSpeed << endl;
+    cout << "coverage area: " << coverageArea << endl;
 
     int senderCount = nodeCount/2;
     int receiverCount = senderCount;
@@ -45,7 +83,7 @@ main(int argc, char* argv[])
     LogComponentEnable("PacketSink", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
     LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
 
-
+    Config::SetDefault("ns3::TcpSocket::SegmentSize", UintegerValue(PACKET_SIZE));
 
 
     //^ Node creation starts
@@ -64,21 +102,27 @@ main(int argc, char* argv[])
     //^ Node creation done
 
 
+    //Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
+    //em->SetAttribute("ErrorRate", DoubleValue(0.00001));
     //^ Point to point link installation 
     PointToPointHelper bottleneckP2P;
-    bottleneckP2P.SetDeviceAttribute("DataRate", StringValue("1Mbps"));
-    bottleneckP2P.SetChannelAttribute("Delay", StringValue("5ms"));
+    bottleneckP2P.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
+    bottleneckP2P.SetChannelAttribute("Delay", StringValue("2ms"));
+    //bottleneckP2P.SetDeviceAttribute ("ReceiveErrorModel", PointerValue(em));
 
 
     //^ Install p2p net devices
     NetDeviceContainer bottleneckDevices;
     bottleneckDevices = bottleneckP2P.Install(bottleneckNodes);
-
+    //bottleneckDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em)); //* Newly added
 
     //^ Physical Layer
     //^ YANS model - Yet Another Network Simulator
     //^ For sender side
     YansWifiChannelHelper channelSender = YansWifiChannelHelper::Default();
+    channelSender.AddPropagationLoss("ns3::RangePropagationLossModel",
+                                    "MaxRange",
+                                    DoubleValue(coverageArea * TX_RANGE));
     YansWifiPhyHelper phySender;
     phySender.SetChannel(channelSender.Create()); //* Share the same wireless medium
 
@@ -87,6 +131,9 @@ main(int argc, char* argv[])
     //^ YANS model - Yet Another Network Simulator
     //^ For receiver's side
     YansWifiChannelHelper channelReceiver = YansWifiChannelHelper::Default();
+    channelReceiver.AddPropagationLoss("ns3::RangePropagationLossModel",
+                                    "MaxRange",
+                                    DoubleValue(coverageArea * TX_RANGE));
     YansWifiPhyHelper phyReceiver;
     phyReceiver.SetChannel(channelReceiver.Create()); //* Share the same wireless medium
 
@@ -200,6 +247,7 @@ main(int argc, char* argv[])
     }
 
 
+
     //^ Create On Off server Apps
     ApplicationContainer senderApps;
     for(int i=0; i<flow; i++){
@@ -211,7 +259,18 @@ main(int argc, char* argv[])
 
         senderApps.Add(senderHelper.Install(senderNodes.Get(i%senderCount)));
     }
-    
+
+
+    //^ For Tracing 
+    for(uint32_t i=0; i<sinkApps.GetN(); i++){
+       sinkApps.Get(i)->TraceConnectWithoutContext("Rx", MakeCallback(&packetReceived));
+    }
+
+    for(uint32_t i=0; i<senderApps.GetN(); i++){
+        senderApps.Get(i)->TraceConnectWithoutContext("Tx", MakeCallback(&packetSent));
+    }
+
+
 
     //^ Routing
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -219,13 +278,13 @@ main(int argc, char* argv[])
 
     //^ Schedule time
     sinkApps.Start(Seconds(1.0));
-    sinkApps.Stop(Seconds(4.0));
-    senderApps.Start(Seconds(1.0));
-    senderApps.Stop(Seconds(3.0));
+    sinkApps.Stop(Seconds(11.0));
+    senderApps.Start(Seconds(2.0));
+    senderApps.Stop(Seconds(7.0));
 
 
     //^ Force stop the simulator
-    Simulator::Stop(Seconds(7.0));
+    Simulator::Stop(Seconds(12.0));
 
     Simulator::Run();
     Simulator::Destroy();
