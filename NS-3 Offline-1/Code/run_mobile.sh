@@ -1,6 +1,6 @@
 #!/bin/bash
 
-folder=scratch/static_data
+folder=scratch/mobile_data
 fileName=$folder/plot.txt
 nodeCount=20
 flow=50
@@ -20,10 +20,10 @@ touch $fileName
 ##./ns3 run "scratch/1905101_1.cc --nodeCount=$nodeCount --flow=$flow --packetPerSec=$packetPerSec --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
 
 ##################         Nodecount VS Throughput and packet delivery ratio           ############### 
-##No of Nodes: 20 40 60 80 100
+#No of Nodes: 20 40 60 80 100
 for i in $(seq 20 20 100)
 do
-    ./ns3 run "scratch/1905101_1.cc --nodeCount=$i --flow=$flow --packetPerSec=$packetPerSec --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
+    ./ns3 run "scratch/1905101_2.cc --nodeCount=$i --flow=$flow --packetPerSec=$packetPerSec --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
 done
 
 ##NodeCount VS Throughput graph generation
@@ -43,7 +43,7 @@ touch $fileName
 ##No of flows: 10,20,30,40,50
 for i in $(seq 10 10 50)
 do
-    ./ns3 run "scratch/1905101_1.cc --nodeCount=$nodeCount --flow=$i --packetPerSec=$packetPerSec --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
+    ./ns3 run "scratch/1905101_2.cc --nodeCount=$nodeCount --flow=$i --packetPerSec=$packetPerSec --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
 done
 
 ##Fow VS Throughput graph generation
@@ -62,7 +62,7 @@ touch $fileName
 ##No of packet per sec: 100,200,300,400,500
 for i in $(seq 100 100 500)
 do
-    ./ns3 run "scratch/1905101_1.cc --nodeCount=$nodeCount --flow=$flow --packetPerSec=$i --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
+    ./ns3 run "scratch/1905101_2.cc --nodeCount=$nodeCount --flow=$flow --packetPerSec=$i --coverageArea=$coverageArea --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
 done
 
 ##Packet per sec VS Throughput graph generation
@@ -75,18 +75,18 @@ gnuplot -c "$folder/res.gnuplot" "$folder/packetRatio_packetpersec.png" "Packet 
 
 
 
-##################             Coverage Area VS throughput and Packet Ratio                  ####################
+##################             Speed of nodes VS throughput and Packet Ratio                  ####################
 rm -f $fileName
 touch $fileName
 
-##Value of coverage area: 1,2,3,4,5
-for i in $(seq 1 1 5)
+##Value of Speed of nodes: 5,10,15,20,25
+for i in $(seq 5 5 25)
 do
-    ./ns3 run "scratch/1905101_1.cc --nodeCount=$nodeCount --flow=$flow --packetPerSec=$packetPerSec --coverageArea=$i --nodeSpeed=$nodeSpeed --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
+    ./ns3 run "scratch/1905101_2.cc --nodeCount=$nodeCount --flow=$flow --packetPerSec=$packetPerSec --coverageArea=$coverageArea --nodeSpeed=$i --simulationTime=$simulationTime --sinkStart=$sinkStart --sinkStop=$sinkStop --senderStart=$senderStart --senderStop=$senderStop --fileName=$fileName"
 done
 
-##Coverage Area VS Throughput graph generation
-gnuplot -c "$folder/res.gnuplot" "$folder/throughput_coveragearea.png" "Coverage Area VS Throughput" "Coverage Area" "throughput (bps)" "$fileName" 4 6
+##Node speed VS Throughput graph generation
+gnuplot -c "$folder/res.gnuplot" "$folder/throughput_nodespeed.png" "Node Speed VS Throughput" "Node Speed" "throughput (bps)" "$fileName" 5 6
 
-##Coverage Area VS Packet Delivery Ratio
-gnuplot -c "$folder/res.gnuplot" "$folder/packetRatio_coveragearea.png" "Coverage Area VS Packet Delivery Ratio" "Coverage Area" "Packet Delivery Ratio" "$fileName" 4 7
+##Node speed VS Packet Delivery Ratio
+gnuplot -c "$folder/res.gnuplot" "$folder/packetRatio_nodespeed.png" "Node Speed VS Packet Delivery Ratio" "Node Speed" "Packet Delivery Ratio" "$fileName" 5 7

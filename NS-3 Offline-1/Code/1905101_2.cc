@@ -36,7 +36,8 @@ double sinkStart = 0.0;
 double sinkStop = 9.0;
 double senderStart = 1.0;
 double senderStop = 8.0;
-string fileName = "scratch/static_data/plot.txt";
+double ap_distance = 100.0;
+string fileName = "scratch/mobile_data/plot.txt";
 
 
 
@@ -64,7 +65,7 @@ void packetSent(Ptr< const Packet > packet){
 
 
 
-NS_LOG_COMPONENT_DEFINE("ns3-offline-1-static");
+NS_LOG_COMPONENT_DEFINE("ns3-offline-1-mobile");
 
 
 
@@ -73,18 +74,11 @@ main(int argc, char* argv[])
 {
     int nodeCount = 20;
     int nodeSpeed = 5;              //* 5 m/s, 10 m/s etc
-    int flow = 10;
+    int flow = 50;
     int packetsPerSec = 100;
-    int coverageArea = 1;
+    int coverageArea = 5;
 
 
-    /*
-double simulationTime;
-double sinkStart;
-double sinkStop;
-double senderStart;
-double senderStop;
-    */
 
     //^ Command line argument parser setup. 
     CommandLine cmd(__FILE__);
@@ -100,7 +94,6 @@ double senderStop;
     cmd.AddValue("senderStop","Sender Stop Time",senderStop);
     cmd.AddValue("fileName","Output File Name",fileName);
     cmd.Parse(argc, argv);
-
 
     if(flow < nodeCount/2){
         flow = nodeCount/2;
@@ -123,7 +116,7 @@ double senderStop;
 
 
     //LogComponentEnable("PacketSink", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
-    //LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
+    ///LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
 
     Config::SetDefault("ns3::TcpSocket::SegmentSize", UintegerValue(PACKET_SIZE));
 
@@ -147,7 +140,7 @@ double senderStop;
     //^ Point to point link installation 
     PointToPointHelper bottleneckP2P;
     bottleneckP2P.SetDeviceAttribute("DataRate", StringValue("20Mbps"));
-    bottleneckP2P.SetChannelAttribute("Delay", StringValue("2ms"));
+    bottleneckP2P.SetChannelAttribute("Delay", StringValue("1ms"));
 
 
     //^ Install p2p net devices
@@ -242,10 +235,58 @@ double senderStop;
     //^ Setup mobility. All nodes should be stationary
     MobilityHelper mobility;
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    Ptr<ListPositionAllocator> ap_position1 = CreateObject<ListPositionAllocator>();
+    ap_position1->Add(Vector(0.0, 5.0, 0.0));
+    mobility.SetPositionAllocator(ap_position1);
     mobility.Install(wifiApNodeSender);
+
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    Ptr<ListPositionAllocator> ap_position2 = CreateObject<ListPositionAllocator>();
+    ap_position2->Add(Vector(ap_distance, 5.0, 0.0));
+    mobility.SetPositionAllocator(ap_position2);
     mobility.Install(wifiApNodeReceiver);
+
+
+
+
+    //^ Setup mobility in sender and receiver nodes 
+
+    double box_half_side = (coverageArea * TX_RANGE) * sqrt(2.0);
+    mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
+                              "Bounds",
+                              RectangleValue(Rectangle(-box_half_side, box_half_side, -box_half_side, box_half_side)),
+                              "Speed",
+                              StringValue("ns3::ConstantRandomVariable[Constant=" + std::to_string(nodeSpeed) + "]"));
+    Ptr<UniformRandomVariable> diskRho = CreateObject<UniformRandomVariable>();
+    diskRho->SetAttribute("Min", ns3::DoubleValue(0.0));
+    diskRho->SetAttribute("Max", ns3::DoubleValue(coverageArea * TX_RANGE));
+    mobility.SetPositionAllocator("ns3::RandomDiscPositionAllocator",
+                                  "X",
+                                  ns3::DoubleValue(0.0),
+                                  "Y",
+                                  ns3::DoubleValue(5.0),
+                                  "Rho",
+                                  ns3::PointerValue(diskRho));
+
     mobility.Install(senderNodes);
+
+    mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
+                              "Bounds",
+                              RectangleValue(Rectangle(-box_half_side + ap_distance, box_half_side + ap_distance, -box_half_side, box_half_side)),
+                              "Speed",
+                              StringValue("ns3::ConstantRandomVariable[Constant=" + std::to_string(nodeSpeed) + "]"));
+    mobility.SetPositionAllocator("ns3::RandomDiscPositionAllocator",
+                                  "X",
+                                  ns3::DoubleValue(ap_distance),
+                                  "Y",
+                                  ns3::DoubleValue(5.0),
+                                  "Rho",
+                                  ns3::PointerValue(diskRho));
     mobility.Install(receiverNodes);
+
+
+
+
 
 
     //^ Install an Internet Stack (TCP, UDP, IP, etc.) in each nodes once
