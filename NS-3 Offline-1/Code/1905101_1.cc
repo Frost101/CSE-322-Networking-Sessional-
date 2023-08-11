@@ -29,20 +29,37 @@ using namespace std;
 //^ Global Var
 int packetSentCount = 0;
 int packetReceivedCount = 0;
-int bitsReceived = 0;
+int bytesReceived = 0;
+
+double simulationTime = 10.0;
+double sinkStart = 0.0;
+double sinkStop = 9.0;
+double senderStart = 1.0;
+double senderStop = 8.0;
+string fileName = "";
 
 
+
+//^ Network Throughput Calculation
+double calculateThroughput() {
+    return (double)((bytesReceived * 8.0) / simulationTime); 
+}
+
+//^ Packet Delivery Ratio
+double calculateRatio() { 
+    return (double)(packetReceivedCount / (packetSentCount * 1.0)); 
+}
 
 //^ Trace Sink
 void packetReceived(Ptr< const Packet > packet, const Address &address){
-    bitsReceived += packet->GetSize();
+    bytesReceived += packet->GetSize();
     packetReceivedCount++;
-    cout << "Packets received: " << packetReceivedCount << "   Bits Received: " << bitsReceived << endl;
+    //cout << "Packets received: " << packetReceivedCount << "   Bytes Received: " << bytesReceived << endl;
 }
 
 void packetSent(Ptr< const Packet > packet){
     packetSentCount++;
-    cout << "Packet Sent: " << packetSentCount << endl;
+    //cout << "Packet Sent: " << packetSentCount << endl;
 }
 
 
@@ -54,12 +71,20 @@ NS_LOG_COMPONENT_DEFINE("ns3-offline-1");
 int 
 main(int argc, char* argv[])
 {
-    int nodeCount = 2;
-    int nodeSpeed = 1;              //* 5 m/s, 10 m/s etc
-    int flow = 1;
-    int packetsPerSec = 1;
+    int nodeCount = 20;
+    int nodeSpeed = 5;              //* 5 m/s, 10 m/s etc
+    int flow = 10;
+    int packetsPerSec = 100;
     int coverageArea = 1;
 
+
+    /*
+double simulationTime;
+double sinkStart;
+double sinkStop;
+double senderStart;
+double senderStop;
+    */
 
     //^ Command line argument parser setup. 
     CommandLine cmd(__FILE__);
@@ -68,6 +93,12 @@ main(int argc, char* argv[])
     cmd.AddValue("packetPerSec", "Number of packets per second", packetsPerSec);
     cmd.AddValue("nodeSpeed", "Speed of nodes", nodeSpeed);
     cmd.AddValue("coverageArea", "Coverage area", coverageArea);
+    cmd.AddValue("simulationTime","Total simulation time",simulationTime);
+    cmd.AddValue("sinkStart","Sink start time",sinkStart);
+    cmd.AddValue("sinkStop", "Sink Stop Time",sinkStop);
+    cmd.AddValue("senderStart","Sender Start Time",senderStart);
+    cmd.AddValue("senderStop","Sender Stop Time",senderStop);
+    cmd.AddValue("fileName","Output File Name",fileName);
     cmd.Parse(argc, argv);
 
     cout << "nodeCount: " << nodeCount << endl;
@@ -75,13 +106,19 @@ main(int argc, char* argv[])
     cout << "packetpersec: " << packetsPerSec << endl;
     cout << "nodeSpeed: " << nodeSpeed << endl;
     cout << "coverage area: " << coverageArea << endl;
+    cout << "simulation time: " << simulationTime << endl;
+    cout << "sink start: " << sinkStart << endl;
+    cout << "sink stop: " << sinkStop << endl;
+    cout << "sender start: " << senderStart << endl;
+    cout << "sender stop: " << senderStop << endl;
+    cout << "Output file name: " << fileName << endl;
 
     int senderCount = nodeCount/2;
     int receiverCount = senderCount;
 
 
-    LogComponentEnable("PacketSink", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
-    LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
+    //LogComponentEnable("PacketSink", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
+    //LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO); // Replace LOG_LEVEL_INFO with the desired logging level
 
     Config::SetDefault("ns3::TcpSocket::SegmentSize", UintegerValue(PACKET_SIZE));
 
@@ -102,19 +139,15 @@ main(int argc, char* argv[])
     //^ Node creation done
 
 
-    //Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
-    //em->SetAttribute("ErrorRate", DoubleValue(0.00001));
     //^ Point to point link installation 
     PointToPointHelper bottleneckP2P;
-    bottleneckP2P.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
+    bottleneckP2P.SetDeviceAttribute("DataRate", StringValue("20Mbps"));
     bottleneckP2P.SetChannelAttribute("Delay", StringValue("2ms"));
-    //bottleneckP2P.SetDeviceAttribute ("ReceiveErrorModel", PointerValue(em));
 
 
     //^ Install p2p net devices
     NetDeviceContainer bottleneckDevices;
     bottleneckDevices = bottleneckP2P.Install(bottleneckNodes);
-    //bottleneckDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em)); //* Newly added
 
     //^ Physical Layer
     //^ YANS model - Yet Another Network Simulator
@@ -277,17 +310,24 @@ main(int argc, char* argv[])
 
 
     //^ Schedule time
-    sinkApps.Start(Seconds(1.0));
-    sinkApps.Stop(Seconds(11.0));
-    senderApps.Start(Seconds(2.0));
-    senderApps.Stop(Seconds(7.0));
+    sinkApps.Start(Seconds(sinkStart));
+    sinkApps.Stop(Seconds(sinkStop));
+    senderApps.Start(Seconds(senderStart));
+    senderApps.Stop(Seconds(senderStop));
 
 
     //^ Force stop the simulator
-    Simulator::Stop(Seconds(12.0));
+    Simulator::Stop(Seconds(simulationTime));
 
     Simulator::Run();
     Simulator::Destroy();
 
+    cout << "Throughput: " << calculateThroughput() << "   Packet Delivery Ratio: " << calculateRatio() << endl;
 
+
+    //^ Write to file
+    ofstream writeToFile(fileName, ios_base::app);
+    writeToFile << nodeCount << " " << flow << " " << packetsPerSec << " " << nodeSpeed << " " << calculateThroughput() << " " << calculateRatio() << "\n" ;
+    writeToFile.close();
+    return 0;
 }
