@@ -36,7 +36,7 @@ double sinkStart = 0.0;
 double sinkStop = 9.0;
 double senderStart = 1.0;
 double senderStop = 8.0;
-string fileName = "";
+string fileName = "scratch/static_data/plot.txt";
 
 
 
@@ -323,11 +323,11 @@ double senderStop;
     Simulator::Destroy();
 
     cout << "Throughput: " << calculateThroughput() << "   Packet Delivery Ratio: " << calculateRatio() << endl;
-
+    cout << "--------------------------------------------------------" << endl;
 
     //^ Write to file
     ofstream writeToFile(fileName, ios_base::app);
-    writeToFile << nodeCount << " " << flow << " " << packetsPerSec << " " << nodeSpeed << " " << calculateThroughput() << " " << calculateRatio() << "\n" ;
+    writeToFile << nodeCount << " " << flow << " " << packetsPerSec << " " << coverageArea  << " " << nodeSpeed << " " << calculateThroughput() << " " << calculateRatio() << "\n" ;
     writeToFile.close();
     return 0;
 }
