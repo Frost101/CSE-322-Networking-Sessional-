@@ -9,9 +9,9 @@ coverageArea=1
 nodeSpeed=5
 simulationTime=10.0
 sinkStart=0.0
-sinkStop=9.0
+sinkStop=10.0
 senderStart=1.0
-senderStop=8.0
+senderStop=10.0
 
 ##Create folder and text file for output
 mkdir -p $folder

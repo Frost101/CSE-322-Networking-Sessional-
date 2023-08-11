@@ -64,7 +64,7 @@ void packetSent(Ptr< const Packet > packet){
 
 
 
-NS_LOG_COMPONENT_DEFINE("ns3-offline-1");
+NS_LOG_COMPONENT_DEFINE("ns3-offline-1-static");
 
 
 
