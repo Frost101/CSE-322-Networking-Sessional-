@@ -216,8 +216,9 @@ double cleanupTime = 2.0;       //^ For flowmonitor
 
 // * Algorithms
 string algorithm1 = "ns3::TcpNewReno";
-string algorithm2 = "ns3::TcpWestwoodPlus";
+string algorithm2 = "ns3::TcpHighSpeed";
 string algorithm3 = "ns3::TcpAdaptiveReno";
+string algorithm4 = "ns3::TcpWestwoodPlus";
 int algoType = 1;       // ^ Type 1:WestWood, Type 2: Adaptive
 
 int main(int argc, char *argv[]){
@@ -228,12 +229,12 @@ int main(int argc, char *argv[]){
 
     // * Input from Command Line 
     CommandLine cmd (__FILE__);
-    cmd.AddValue ("algoType","Type 1 for WestWood, Type 2 for Adaptive Reno", algoType);
+    cmd.AddValue ("algoType","Type 1 for HighSpeed, Type 2 for Adaptive Reno, Type 3 for WestwoodPlus", algoType);
     cmd.AddValue ("bottleNeckDRate","BottleNeck Data Rate", bottleNeckDRateV);
     cmd.AddValue ("packetLossExp", "Packet loss rate exponential", packetLossExp);
     cmd.AddValue ("fileName", "File for throughput,datarate,lossexp", fileName);
     cmd.AddValue ("fileName1", "File for TCP new Reno", fileName1);
-    cmd.AddValue ("fileName2", "File for westwood/adaptive", fileName2);
+    cmd.AddValue ("fileName2", "File for WestWoodPlus/HighSpeed/adaptive", fileName2);
     cmd.Parse (argc,argv);
 
     double packetLossRate = (1.0 / pow(10, packetLossExp));
@@ -243,10 +244,13 @@ int main(int argc, char *argv[]){
 
     // * For debugging purpose
     if(algoType == 1){
-        cout << "AlgoType: TCP New Reno And WestWood Plus, bottleNeck Data Rate: " << bottleNeckDataRate << "  packetLossExp: " << packetLossExp << endl;
+        cout << "AlgoType: TCP New Reno Vs High-Speed, bottleNeck Data Rate: " << bottleNeckDataRate << "  packetLossExp: " << packetLossExp << endl;
     }
-    else{
-        cout << "AlgoType: TCP New Reno And WestWood Plus, bottleNeck Data Rate: " << bottleNeckDataRate << "  packetLossExp: " << packetLossExp << endl;
+    else if(algoType == 2){
+        cout << "AlgoType: TCP New Reno Vs Adaptive Reno, bottleNeck Data Rate: " << bottleNeckDataRate << "  packetLossExp: " << packetLossExp << endl;
+    }
+    else if(algoType == 3){
+        cout << "AlgoType: TCP New Reno Vs TCP WestwoodPlus, bottleNeck Data Rate: " << bottleNeckDataRate << "  packetLossExp: " << packetLossExp << endl;
     }
 
     // * Set Packet Size
@@ -304,12 +308,16 @@ int main(int argc, char *argv[]){
 
     // * Sender 1 and Receiver 1 will get TCP WestWood/Adaptive Reno
     if(algoType == 1){
-        // ? West Wood Plus
+        // ? High Speed
         Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue(algorithm2));
     }
-    else{
+    else if(algoType == 2){
         // ? Adaptive Reno
         Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue(algorithm3));
+    }
+    else if(algoType == 3){
+        // ? WestwoodPlus
+        Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue(algorithm4));
     }
 
     InternetStackHelper stack2;
