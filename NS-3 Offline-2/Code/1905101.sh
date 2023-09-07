@@ -231,5 +231,5 @@ touch $fileName2
 
 ./ns3 run "scratch/1905101.cc --algoType=$algoType --bottleNeckDRate=$bottleNeckDRateV --packetLossExp=$packetLossExp --fileName=$fileName --fileName1=$fileName1 --fileName2=$fileName2"
 # parameters - title, xlabel, ylabel, input file1, output file, xcolumn, y column1, y tick1, input file2, y column2, y tick2
-graph "Congestion Window VS Time" "Time(seconds)" "Congestion Window" "$fileName1" "$folder/congestion_time_AdaptiveReno.png" 1 2 "WestWoodPlus" "$fileName2" 2 "AdaptiveReno"
+graph "Congestion Window VS Time" "Time(seconds)" "Congestion Window" "$fileName1" "$folder/congestion_time_AdaptiveReno.png" 1 2 "TCPNewReno" "$fileName2" 2 "AdaptiveReno"
 
