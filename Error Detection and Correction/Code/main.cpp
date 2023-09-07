@@ -1,5 +1,6 @@
 #include<bits/stdc++.h>
 #include "errorCorrection.h"
+#include "errorDetection.h"
 
 
 
@@ -24,9 +25,13 @@ void createDataBlock(string data, int m);
 void printDataBlock();
 void printDataBlockWithCheckBits();
 string serialize(int m);
+void toggle(string &serializedData, vector<bool> &markRedBits, double p);
+void printReceivedFrame(string receivedFrame, vector<bool> markedRedBits);
+void removeCRCandDeserialize(string &receivedData, vector<bool> markRedBits, string genPolynomial, vector<vector<bool>> &newMarkRedBits);
 
 //* Global variables
 vector<string> dataBlock;
+vector<string> rcvDataBlock;
 
 int main()
 {
@@ -86,7 +91,133 @@ int main()
     cout << serializedData << endl;
     cout << endl;
 
+
+    //* Step:05
+    //* CRC checksum computation
+    CRCchecksum(serializedData, genPolynomial);
+
+
+    //* Step:06
+    //* Simulate the physical transmision by toggling each bit
+    //* of the stream with a probability p
+    vector<bool> markRedBits;
+    for(int i=0; i<serializedData.size(); i++){
+        markRedBits.push_back(false);
+    }
+    toggle(serializedData,markRedBits,p);
+    string receivedFrame = serializedData;
+    //* Print
+    printReceivedFrame(receivedFrame, markRedBits);
+
+
+    //* Step:07 
+    //* Verify the correctness of the received frame using the geenrator polynomial
+    bool err = detectError(receivedFrame, genPolynomial);
+    //* Print
+    cout << "result of CRC checksum matching: ";
+    if(err){
+        cout << "error detected" << endl;
+    }
+    else{
+        cout << "no error detected" << endl;
+    }
+    cout << endl;
+
+
+
+    //* Step:08
+    //* Remove the CRC checksum bits from the data stream
+    //* and de-serialize it
+    int rows = dataBlock.size();
+    vector<vector<bool>> newMarkRedBits(rows);
+    for(int i=0; i<rows; i++){
+        for(int j=0; j<dataBlock[0].size(); j++){
+            newMarkRedBits[i].push_back(false);
+        }
+    }
+
+    //* Initialize receiver's data block
+    rcvDataBlock.clear();
+    for(int i=0; i<dataBlock.size(); i++){
+        rcvDataBlock.push_back("");
+    }
+
+    removeCRCandDeserialize(receivedFrame, markRedBits, genPolynomial, newMarkRedBits);
+
 }
+
+
+
+void removeCRCandDeserialize(string &receivedData, vector<bool> markRedBits, string genPolynomial, vector<vector<bool>> &newMarkRedBits){
+    //* Remove CRC check bits first
+    int len = genPolynomial.size() - 1;
+    while(len > 0){
+        receivedData.pop_back();
+        len--;
+    }
+
+    //* Deserialization begins
+    int rowSize = dataBlock[0].size();
+    int rows = dataBlock.size();
+    int idx = 0;
+    for(int i=0; i<rowSize; i++){
+        for(int j=0; j<rows; j++){
+            rcvDataBlock[j].push_back(receivedData[idx]);
+            newMarkRedBits[j][i] = markRedBits[idx];
+            idx++;
+        }
+    }
+
+    //* print
+    cout << "data block after removing CRC checksum bits:" << endl;
+    for(int i=0; i<rcvDataBlock.size(); i++){
+        for(int j=0; j<rcvDataBlock[i].size(); j++){
+            if(newMarkRedBits[i][j]){
+                cout << RED << rcvDataBlock[i][j] << RESET;
+            }
+            else{
+                cout << rcvDataBlock[i][j];
+            }
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+
+
+void printReceivedFrame(string receivedFrame, vector<bool> markedRedBits){
+    cout << "received frame:" << endl;
+    for(int i=0; i<receivedFrame.size(); i++){
+        if(markedRedBits[i]){
+            cout << RED << receivedFrame[i] << RESET ;
+        }
+        else{
+            cout << receivedFrame[i];
+        }
+    }
+    cout << endl;
+    cout << endl;
+}
+
+
+void toggle(string &serializedData, vector<bool> &markRedBits, double p){
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+    double random_number = 0.0;
+    for(int i=0; i<serializedData.size(); i++){
+        random_number = dist(rng);
+        if(random_number <= p && p!=0.0){
+            markRedBits[i] = true;
+            if(serializedData[i] == '0') serializedData[i] = '1';
+            else if(serializedData[i] == '1') serializedData[i] = '0';
+        }
+    }
+
+
+}
+
 
 void adjustDataString(string &data, int m){
     //* If the size of the data string is not a multiple of m,
