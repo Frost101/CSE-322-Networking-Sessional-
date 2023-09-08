@@ -6,6 +6,7 @@ int countParityBits(int m);
 void addCheckBits(vector<string> &dataBlock, int m);
 string convertToBinary2(int ascii);
 void calculateParity(string &tmpStr, int p);
+void correctError(vector<string> &dataBlock, int m);
 
 int countParityBits(int m){
     //* Number of check bits needed per row
@@ -100,5 +101,56 @@ void calculateParity(string &tmpStr, int p){
         //* Even Parity
         if(cnt%2) tmpStr[idxP-1] = '1';     //^ Adjusting the parity to one
         idxP *= 2;
+    }
+}
+
+
+
+void correctError(vector<string> &dataBlock, int m){
+    int rows = dataBlock.size();
+    int p = countParityBits(m);
+
+    for(int k=0; k<rows; k++){
+        int sum = 0;
+        string tmpStr = dataBlock[k];
+        int length = tmpStr.size();
+        int cnt = 0;        //^ No of one found
+
+        int idxP = 1;
+        for(int i=1; i<=p; i++){
+            cnt = 0;
+            for(int j=0; j<tmpStr.size(); j++){
+                string tmp = convertToBinary2(j+1);
+                string tmp2 = convertToBinary2(idxP);
+                reverse(tmp.begin(), tmp.end());
+                reverse(tmp2.begin(), tmp2.end());
+                if(tmpStr[j] == '1' && tmp[i-1] == '1' && tmp2[i-1] == '1')cnt++;
+            }
+
+            //* Even Parity
+            sum += (idxP * (cnt%2));
+            idxP *= 2;
+        }
+        if(sum > 0){
+            //* Error Occurs
+            if(tmpStr[sum-1] == '0') tmpStr[sum-1] = '1';
+            else if(tmpStr[sum-1] == '1') tmpStr[sum-1] = '0';
+        }
+        dataBlock[k] = tmpStr;
+    }
+
+    
+    for(int i=0; i<rows; i++){
+        int idxP = 1;
+        string tmp;
+        for(int j=0;j<dataBlock[i].size();j++){
+            if(j==idxP-1){
+                idxP *= 2;
+            }
+            else{
+                tmp.push_back(dataBlock[i][j]);
+            }
+        }
+        dataBlock[i] = tmp;
     }
 }

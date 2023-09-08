@@ -28,6 +28,10 @@ string serialize(int m);
 void toggle(string &serializedData, vector<bool> &markRedBits, double p);
 void printReceivedFrame(string receivedFrame, vector<bool> markedRedBits);
 void removeCRCandDeserialize(string &receivedData, vector<bool> markRedBits, string genPolynomial, vector<vector<bool>> &newMarkRedBits);
+void printDataBlockRcv();
+char convertToAscii(string chBits);
+string retreiveMessage();
+
 
 //* Global variables
 vector<string> dataBlock;
@@ -144,8 +148,56 @@ int main()
 
     removeCRCandDeserialize(receivedFrame, markRedBits, genPolynomial, newMarkRedBits);
 
+
+
+
+    //* Step:09
+    //* Correct the error in each row
+    //* Remove Check Bits
+    correctError(rcvDataBlock,m);
+    printDataBlockRcv();
+
+
+    //* Step:10
+    //* From the bits of the data block
+    //* compute the ascii codes of the characters
+    string message = retreiveMessage();
+
+    cout << "output frame: ";
+    cout << message << endl;
+    cout << endl;
+
+
 }
 
+char convertToAscii(string chBits){
+    int tmp = 1;
+    int sum = 0;
+    for(int i=chBits.size()-1; i>=0; i--){
+        sum += ((chBits[i]-'0') * tmp);
+        tmp *= 2;
+    }
+    return (char)sum;
+}
+
+string retreiveMessage(){
+    int rows = rcvDataBlock.size();
+    int len = rcvDataBlock[0].size();
+
+    string message;
+    for(int i=0; i<rows; i++){
+        string chBits;
+        for(int j=0; j<len; j++){
+            chBits.push_back(rcvDataBlock[i][j]);
+            if(chBits.size()==8){
+                message.push_back(convertToAscii(chBits));
+                chBits.clear();
+            }
+        }
+    }
+
+    return message;
+}
 
 
 void removeCRCandDeserialize(string &receivedData, vector<bool> markRedBits, string genPolynomial, vector<vector<bool>> &newMarkRedBits){
@@ -271,6 +323,17 @@ void printDataBlock(){
 
     for(int i=0; i<dataBlock.size(); i++){
         cout << dataBlock[i] << endl;
+    }
+    cout << endl;
+}
+
+
+void printDataBlockRcv(){
+
+    cout << "data block after removing check bits:" << endl;
+
+    for(int i=0; i<rcvDataBlock.size(); i++){
+        cout << rcvDataBlock[i] << endl;
     }
     cout << endl;
 }
